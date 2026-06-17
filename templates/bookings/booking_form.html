@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Book {{ form.destination.name }} - Travel Reservation{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="section-title mb-4"><i class="bi bi-calendar-check"></i> Book Your Trip</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            {% if destination.image %}
+                            <img src="{{ destination.image.url }}" alt="{{ destination.name }}" class="img-fluid rounded mb-3" style="max-height: 200px; object-fit: cover;">
+                            {% endif %}
+                            <h4>{{ destination.name }}</h4>
+                            <p class="text-muted mb-3">{{ destination.country }}</p>
+                            <p class="mb-2"><strong>Price per Person:</strong> <span style="color: var(--primary-color); font-size: 1.5rem;">${{ destination.price_per_person }}</span></p>
+                            <p class="mb-2"><strong>Duration:</strong> {{ destination.duration_days }} days</p>
+                            <p class="mb-0"><strong>Available Slots:</strong> <span class="badge badge-success">{{ available_slots }}</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Booking Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.travel_start_date.id_for_label }}" class="form-label">Travel Start Date *</label>
+                                    {{ form.travel_start_date }}
+                                    {% if form.travel_start_date.errors %}
+                                    <div class="text-danger small">{{ form.travel_start_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.travel_end_date.id_for_label }}" class="form-label">Travel End Date *</label>
+                                    {{ form.travel_end_date }}
+                                    {% if form.travel_end_date.errors %}
+                                    <div class="text-danger small">{{ form.travel_end_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.number_of_people.id_for_label }}" class="form-label">Number of People *</label>
+                                    {{ form.number_of_people }}
+                                    <small class="text-muted">Max: {{ available_slots }}</small>
+                                    {% if form.number_of_people.errors %}
+                                    <div class="text-danger small">{{ form.number_of_people.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.special_requests.id_for_label }}" class="form-label">Special Requests</label>
+                                    {{ form.special_requests }}
+                                </div>
+                                
+                                <div class="alert alert-info mb-3">
+                                    <strong>Total Cost:</strong> <span style="color: var(--primary-color); font-size: 1.2rem;" id="total-cost">Calculating...</span>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary-custom btn-lg w-100">
+                                    <i class="bi bi-check-circle"></i> Confirm Booking
+                                </button>
+                                <a href="{% url 'destinations:destination_detail' destination.name %}" class="btn btn-light btn-lg w-100 mt-2">
+                                    <i class="bi bi-arrow-left"></i> Cancel
+                                </a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #id_travel_start_date, #id_travel_end_date, #id_number_of_people, #id_special_requests {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.95rem;
+        width: 100%;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pricePerPerson = {{ destination.price_per_person }};
+    const peopleInput = document.getElementById('id_number_of_people');
+    const totalCostDisplay = document.getElementById('total-cost');
+    
+    function updateTotalCost() {
+        const people = parseInt(peopleInput.value) || 0;
+        const totalCost = people * pricePerPerson;
+        totalCostDisplay.textContent = '$' + totalCost.toFixed(2);
+    }
+    
+    peopleInput.addEventListener('change', updateTotalCost);
+    updateTotalCost();
+});
+</script>
+{% endblock %}

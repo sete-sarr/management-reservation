@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Travel Reservation Management System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.js"></script>
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <style>
+        :root {
+            --primary-color: #f97316;
+            --secondary-color: #0f172a;
+            --light-gray: #f3f4f6;
+            --dark-gray: #1f2937;
+            --border-color: #e5e7eb;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+        
+        /* Navbar Styling */
+        .navbar {
+            background-color: var(--secondary-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .navbar .nav-link {
+            color: #fff !important;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .navbar .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        .navbar .btn-outline-warning {
+            color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+        
+        .navbar .btn-outline-warning:hover {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+        
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: var(--secondary-color);
+            min-height: calc(100vh - 70px);
+            padding: 2rem 0;
+            color: white;
+        }
+        
+        .sidebar .nav-link {
+            color: #cbd5e1 !important;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: var(--primary-color) !important;
+            background-color: rgba(249, 115, 22, 0.1);
+            border-left-color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* Buttons */
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 0.625rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom:hover {
+            background-color: #ea580c;
+            border-color: #ea580c;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+        
+        .btn-secondary-custom {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-secondary-custom:hover {
+            background-color: #1e293b;
+            border-color: #1e293b;
+            color: white;
+        }
+        
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #f59e0b);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .card-stat {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        
+        .card-stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .card-stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Alert Messages */
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #065f46;
+        }
+        
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+        
+        .alert-warning {
+            background-color: #fffbeb;
+            color: #92400e;
+        }
+        
+        .alert-info {
+            background-color: #f0f9ff;
+            color: #0c4a6e;
+        }
+        
+        /* Forms */
+        .form-control,
+        .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Tables */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table thead {
+            background-color: var(--light-gray);
+        }
+        
+        .table thead th {
+            border: none;
+            font-weight: 600;
+            color: var(--secondary-color);
+            padding: 1rem;
+        }
+        
+        .table tbody td {
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .badge-info {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+        }
+        
+        /* Rating Stars */
+        .rating {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        .rating.empty {
+            color: #d1d5db;
+        }
+        
+        /* Section Title */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 5rem;
+        }
+        
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .card-stat-value {
+                font-size: 1.8rem;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'destinations:home' %}">
+                <i class="bi bi-globe"></i> TravelHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'destinations:destination_list' %}">
+                            <i class="bi bi-map"></i> Browse
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'bookings:booking_list' %}">
+                                <i class="bi bi-ticket"></i> My Bookings
+                            </a>
+                        </li>
+                        {% if user.is_superuser or user.profile.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'bookings:admin_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">
+                                    <i class="bi bi-person"></i> Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:profile_update' %}">
+                                    <i class="bi bi-pencil"></i> Edit Profile
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'users:logout' %}">
+                                    <i class="bi bi-box-arrow-left"></i> Logout
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-warning ms-2" href="{% url 'users:register' %}">
+                                <i class="bi bi-person-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container-fluid">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-info-circle"></i> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">About TravelHub</h5>
+                    <p class="small">Your trusted platform for booking amazing travel experiences around the world.</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'destinations:home' %}">Home</a></li>
+                        <li><a href="{% url 'destinations:destination_list' %}">Destinations</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Support</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#feedback">Feedback</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Follow Us</h5>
+                    <a href="#facebook" class="me-3"><i class="bi bi-facebook"></i></a>
+                    <a href="#twitter" class="me-3"><i class="bi bi-twitter"></i></a>
+                    <a href="#instagram" class="me-3"><i class="bi bi-instagram"></i></a>
+                </div>
+            </div>
+            <hr style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="small mb-0">&copy; 2024 TravelHub. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="small mb-0">
+                        <a href="#privacy">Privacy Policy</a> | 
+                        <a href="#terms">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

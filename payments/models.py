@@ -1,0 +1,63 @@
+from django.db import models
+from bookings.models import Booking
+
+
+class Payment(models.Model):
+    """Model representing payment information for bookings."""
+    PAYMENT_METHOD_CHOICES = [
+        ('credit_card', 'Credit Card'),
+        ('debit_card', 'Debit Card'),
+        ('paypal', 'PayPal'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('cash', 'Cash'),
+    ]
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='payment')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    transaction_id = models.CharField(max_length=100, unique=True, blank=True)
+    payment_date = models.DateTimeField(blank=True, null=True)
+    refund_date = models.DateTimeField(blank=True, null=True)
+    refund_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'payments'
+
+    def __str__(self):
+        return f"Payment {self.transaction_id} - {self.booking.confirmation_code}"
+
+    def mark_as_completed(self):
+        """Mark payment as completed."""
+        from datetime import datetime
+        self.payment_status = 'completed'
+        self.payment_date = datetime.now()
+        self.save()
+        # Update booking status
+        self.booking.payment_received = True
+        self.booking.status = 'confirmed'
+        self.booking.save()
+
+    def process_refund(self, refund_amount):
+        """Process a refund."""
+        from datetime import datetime
+        if refund_amount > self.amount:
+            raise ValueError("Refund amount cannot exceed payment amount")
+        self.payment_status = 'refunded'
+        self.refund_date = datetime.now()
+        self.refund_amount = refund_amount
+        self.save()
+        # Update booking status
+        self.booking.status = 'cancelled'
+        self.booking.save()

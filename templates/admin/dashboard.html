@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Travel Reservation{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <h2 class="section-title mb-4"><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: var(--primary-color);">{{ total_bookings }}</div>
+                <div class="card-stat-label">Total Bookings</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #10b981;">{{ confirmed_bookings }}</div>
+                <div class="card-stat-label">Confirmed</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #f59e0b;">{{ pending_bookings }}</div>
+                <div class="card-stat-label">Pending</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #8b5cf6;">${{ total_revenue }}</div>
+                <div class="card-stat-label">Total Revenue</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #3b82f6;">{{ total_destinations }}</div>
+                <div class="card-stat-label">Destinations</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #ef4444;">{{ total_users }}</div>
+                <div class="card-stat-label">Active Users</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #ec4899;">{{ cancelled_bookings }}</div>
+                <div class="card-stat-label">Cancelled</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card card-stat">
+                <div class="card-stat-value" style="color: #14b8a6;">{{ total_bookings }}</div>
+                <div class="card-stat-label">Conversion Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Booking Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Revenue Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Bookings</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Confirmation Code</th>
+                        <th>Customer</th>
+                        <th>Destination</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in recent_bookings %}
+                    <tr>
+                        <td><strong>{{ booking.confirmation_code }}</strong></td>
+                        <td>{{ booking.user.get_full_name|default:booking.user.username }}</td>
+                        <td>{{ booking.destination.name }}</td>
+                        <td>{{ booking.booking_date|date:"M d, Y" }}</td>
+                        <td style="color: var(--primary-color); font-weight: 700;">${{ booking.total_price }}</td>
+                        <td>
+                            {% if booking.status == 'confirmed' %}
+                            <span class="badge badge-success">Confirmed</span>
+                            {% elif booking.status == 'pending' %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% else %}
+                            <span class="badge badge-secondary">{{ booking.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No bookings yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Booking Status Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Confirmed', 'Pending', 'Cancelled'],
+        datasets: [{
+            data: [{{ confirmed_bookings }}, {{ pending_bookings }}, {{ cancelled_bookings }}],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    }
+});
+
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Revenue', 'Average Per Booking'],
+        datasets: [{
+            label: 'Amount',
+            data: [{{ total_revenue }}, {{ total_revenue|divide:total_bookings }}],
+            backgroundColor: ['#f97316', '#f59e0b'],
+            borderColor: ['#ea580c', '#ea580c'],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toFixed(0);
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
